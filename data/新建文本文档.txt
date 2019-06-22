@@ -1,0 +1,4 @@
+利用SQLyog - 64 bit连接MySQL
+将数据库文件导入到MySQL数据库中
+
+李振锋

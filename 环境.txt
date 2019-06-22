@@ -1,0 +1,4 @@
+Pycharm2018
+Python3.7（安装request模块，flask模块，bs4模块等等）
+SQLyog - 64 bit
+MySQL5.5

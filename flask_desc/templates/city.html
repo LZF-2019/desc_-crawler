@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }}城市主页</title>
+
+</head>
+<style type="text/css">
+    html,body{
+        height: 100%;
+        width:100%;
+    }
+</style>
+<body>
+       <script src="http://libs.baidu.com/jquery/1.7.2/jquery.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/echarts.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-gl/echarts-gl.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts-stat/ecStat.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/dataTool.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/china.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/map/js/world.js"></script>
+       <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=VP8z8KawuZYH9EuaFR0GxhTHsM80rR7y"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/echarts/extension/bmap.min.js"></script>
+       <script type="text/javascript" src="http://echarts.baidu.com/gallery/vendors/simplex.js"></script>
+<a href="http://127.0.0.1:5000/">返回登录主页</a>
+       <form style="line-height: 30px;text-align: center">
+        <p>
+             柱状图/折线图:<select id="zz">
+            <option value="" selected></option>
+            <option value="柱状图">柱状图</option>
+            <option value="折线图">折线图</option>
+        </select>
+            <input type="button" onclick="changeZZ()" value="切换">
+        </p>
+</form>
+ <div id="container" class="table" style="height: 80%;width:90%; margin: 50px;padding: 0px"></div>
+<script type="text/javascript">
+    var dom = document.getElementById("container");
+    var myChart = echarts.init(dom);
+    var app = {};
+
+    option = null;
+// 异步加载数据
+         var legendData=[];    //名称数组（实际用来城市名）
+         var seriesData=[];    //数量数组（实际用来盛放城市房价数据）
+         var xAxisData=[];    //横坐标数组(实际用来城市名)
+         var titleText='';
+         var data_city={}
+   $(document).ready(function () {
+           getDataZZ();
+    });
+    function getDataZZ() {
+        cityname='{{ title }}'
+        var cityName={'name':cityname}
+        console.log(cityName)
+        $.ajax({
+            url:'/cityData/',
+            data:cityName,
+            type:'GET',
+            async:false,
+            dataType:'json',
+            success:function(data) {
+                seriesData=[]
+                for(var Key in data){
+                    titleText=Key
+                    seriesData=data[Key]
+                }
+               myChart.clear();
+               myChart.setOption(
+                   {
+                       title: {
+                            text: '2018年'+titleText+'房价数据',
+                            subtext: '2018年'+titleText+'区域数据',
+                            sublink: 'http://127.0.0.1:5000/'+'city/'+titleText+'/area/',
+                            left: 'center',
+                            textStyle: {
+                                color: '#652'
+                            }
+                        },
+                        color: ['#3398DB'],
+                       /*
+                        tooltip : {
+                            trigger: 'axis',
+                            axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+                                type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                            }
+                        },
+                        */
+                       tooltip : {
+                                trigger: 'item',
+                                formatter : function (params) {
+                                    if(params.dataIndex==0)
+                                        return ;
+                                    else{
+                                        var ratio=(((seriesData[params.dataIndex]-seriesData[params.dataIndex-1])/seriesData[params.dataIndex-1])*100).toFixed(2)
+                                        return '同比上涨'+ratio+'%'
+                                    }
+                                }
+                       },
+                        grid: {
+                            left: '3%',
+                            right: '4%',
+                            bottom: '3%',
+                            containLabel: true
+                        },
+                        xAxis : [
+                            {
+                                type: 'category',
+                                data: ['一月', '二月', '三月', '四月', '五月', '六月',
+                                    '七月', '八月', '九月', '十月', '十一月', '十二月',],
+                                axisTick: {
+                                    alignWithLabel: true
+                                }
+                            }
+                         ],
+                        yAxis : [
+                            {
+                                type : 'value'
+                            }
+                        ],
+                        series : [
+                            {
+                                name:'房价数据',
+                                type:'bar',
+                                barWidth: '60%',
+                                data:seriesData,
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'inside'
+                                    }
+                                },
+                                markPoint: {
+                                    data: [
+                                        {type: 'max', name: '最大值'},
+                                        {type: 'min', name: '最小值'}
+                                    ]
+                                },
+                                markLine: {
+                                    data: [
+                                        {type: 'average', name: '平均值'}
+                                    ]
+                                }
+                            }
+                        ]
+                    }
+               )
+            },
+            error:function (msg) {
+                console.log(msg);
+                alert('系统发生错误');
+            }
+        });
+    }
+    myChart.on("click",function (params) {
+        var month=params.name;
+        window.open("http://127.0.0.1:5000/city/"+'{{ title }}/'+month+'/', "_self");
+    })
+    function selectDasc() {
+        var options=$("#city option:selected");  //获取选中的option
+        var cityName=options.val();   //拿到选中项的值
+        options=$("#month option:selected");
+        var cityMonth=options.val();
+        if(cityMonth!=""&&cityName!="")
+            window.open("http://127.0.0.1:5000/city/"+cityName+'/'+cityMonth+'/', "_self");
+        else if(cityName!="")
+            window.open("http://127.0.0.1:5000/city/"+cityName+'/', "_self");
+        else
+            alert(请选择城市);
+    }
+    function changeZZ() {
+        var options=$("#zz option:selected");  //获取选中的option
+        var changeXY=options.val();
+        if(changeXY=="柱状图")
+             myChart.setOption({
+                 series : [
+                            {
+                                name:'房价数据',
+                                type:'bar',
+                                barWidth: '60%',
+                                data:seriesData,
+                                label: {
+                                    normal: {
+                                        show: true,
+                                        position: 'inside'
+                                    }
+                                },
+                                markPoint: {
+                                    data: [
+                                        {type: 'max', name: '最大值'},
+                                        {type: 'min', name: '最小值'}
+                                    ]
+                                },
+                                markLine: {
+                                    data: [
+                                        {type: 'average', name: '平均值'}
+                                    ]
+                                }
+                            }
+                        ]
+             })
+        else if(changeXY=="折线图")
+            myChart.setOption({
+                 series: [{
+                    data: seriesData,
+                    type: 'line',
+                     label: {
+                         normal: {
+                             show: true,
+                             position: 'top'
+                         }
+                     },
+                     markPoint: {
+                         data: [
+                             {type: 'max', name: '最大值'},
+                             {type: 'min', name: '最小值'}
+                         ]
+                     },
+                     markLine: {
+                         data: [
+                             {type: 'average', name: '平均值'}
+                         ]
+                     }
+                }]
+            })
+
+    }
+    function min(data) {//返回房价最小值
+        var Min=data[0]
+        for(var key in data){
+            if(Min>data[key])
+                Min=data[Key]
+        }
+        return Min;
+    }
+    function max(data){//返回房价最大值
+        var Max=data[0]
+        for(var key in data){
+            if(Max<data[key])
+                Min=data[Key]
+        }
+        return Max;
+    }
+
+</script>
+</body>
+</html>
